@@ -1,4 +1,4 @@
-# DDN
+# DDN : Dense Descriptor Network
 
 This is a Pytorch implementation of dense correspondence network (dense object descriptor) for robot manipulation and keyframe based navigation.
 
