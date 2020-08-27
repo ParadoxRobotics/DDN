@@ -1,4 +1,4 @@
-# Compute contrastive loss given network output and match/non-match
+# Visual descriptor network based on a pre-trained ResNet34 and FCN decoder
 # Author : Munch Quentin, 2020
 
 import math
@@ -16,49 +16,44 @@ class VisualDescriptorNet(torch.nn.Module):
         super(VisualDescriptorNet, self).__init__()
         # D dimensionnal descriptors
         self.descriptorDim = descriptorDim
-        # Get pretrained Resnet18 without last actiavtion layer (softmax)
-        self.ResNet = nn.Sequential(*list(models.resnet18(pretrained=trainingMode).children())[:-2])
-        # Resnet layer block list
-        layerBlock = list(self.ResNet.children())
-        # Encoder layer output for the FCN
-        self.layerBlock0 = layerBlock[0] # size=(N, 64, x.H/2, x.W/2)
-        self.layerBlock1 = layerBlock[1] # size=(N, 64, x.H/2, x.W/2)
-        self.layerBlock2 = layerBlock[2] # size=(N, 64, x.H/2, x.W/2)
-        self.layerBlock3 = layerBlock[3] # size=(N, 64, x.H/4, x.W/4)
-        self.layerBlock4 = layerBlock[4] # size=(N, 64, x.H/4, x.W/4)
-
-        self.layerBlock5 = layerBlock[5] # size=(N, 128, x.H/8, x.W/8)
-        self.layerBlock6 = layerBlock[6] # size=(N, 256, x.H/16, x.W/16)
-        self.layerBlock7 = layerBlock[7] # size=(N, 512, x.H/32, x.W/32)
-        # Decoder layer
-        self.upsample1 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-        self.upsample2 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
-        self.upsample3 = nn.Upsample(scale_factor=16, mode='bilinear', align_corners=True)
-        self.upsample4 = nn.Upsample(scale_factor=32, mode='bilinear', align_corners=True)
-        # Fusion layer
-        self.fuseConv = nn.Conv2d(64 + 128 + 256 + 512, self.descriptorDim, 1)
-        # activation function
+        # Get full pretrained Resnet34
+        self.fullResNet = models.resnet34(pretrained=trainingMode)
+        # get block expension
+        self.resnetExpRate = self.fullResNet.layer1[0].expansion
+        # Get pretrained Resnet34 without last actiavtion layer (softmax)
+        self.ResNet = nn.Sequential(*list(self.fullResNet.children())[:-2])
+        # build lateral convolutional layer for the the FCN
+        self.upConv4 = nn.Conv2d(64 * self.resnetExpRate, self.descriptorDim, kernel_size=1)
+        self.upConv8 = nn.Conv2d(128 * self.resnetExpRate, self.descriptorDim, kernel_size=1)
+        self.upConv16 = nn.Conv2d(256 * self.resnetExpRate, self.descriptorDim, kernel_size=1)
+        self.upConv32 = nn.Conv2d(512 * self.resnetExpRate, self.descriptorDim, kernel_size=1)
+        # actiavtion function for the last layer (decoder)
         self.activation = nn.ReLU()
 
     def forward(self, x):
-        x = self.layerBlock0(x)
-        x = self.layerBlock1(x)
-        x = self.layerBlock2(x)
-        x = self.layerBlock3(x)
-        x = self.layerBlock4(x)
-        print(x.shape)
-        up1 = self.upsample1(x)
-        x = self.layerBlock5(x)
-        print(x.shape)
-        up2 = self.upsample2(x)
-        x = self.layerBlock6(x)
-        print(x.shape)
-        up3 = self.upsample3(x)
-        x = self.layerBlock7(x)
-        print(x.shape)
-        up4 = self.upsample4(x)
-        merge = torch.cat([up1, up2, up3, up4], dim=1)
-        print(merge.shape)
-        out = self.fuseConv(merge)
-        out = self.activation(out)
+        # get input size -> for the upsampling
+        InputSize = x.size()[2:]
+        # processing with the resnet + lateral convolution
+        x = self.ResNet[0](x) # conv1
+        x = self.ResNet[1](x) # bn1
+        x = self.ResNet[2](x) # ReLU1
+        x = self.ResNet[3](x) # maxpool1
+        x = self.ResNet[4](x) # layer1 size=(N, 64, x.H/4, x.W/4)
+        up1 = self.upConv4(x)
+        x = self.ResNet[5](x) # layer2 size=(N, 128, x.H/8, x.W/8)
+        up2 = self.upConv8(x)
+        x = self.ResNet[6](x) # layer3 size=(N, 256, x.H/16, x.W/16)
+        up3 = self.upConv16(x)
+        x = self.ResNet[7](x) # layer4 size=(N, 512, x.H/32, x.W/32)
+        up4 = self.upConv32(x)
+        # get output size of the lateral convolution
+        up1Size = up1.size()[2:]
+        up2Size = up2.size()[2:]
+        up3Size = up3.size()[2:]
+        # compute residual upsampling
+        up3 += nn.functional.interpolate(up4, size=up3Size)
+        up2 += nn.functional.interpolate(up3, size=up2Size)
+        up1 += nn.functional.interpolate(up2, size=up1Size)
+        finalUp = nn.functional.interpolate(up1, size=InputSize)
+        out = self.activation(finalUp)
         return out
