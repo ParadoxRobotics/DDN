@@ -56,4 +56,4 @@ class VisualDescriptorNet(torch.nn.Module):
         up1 += nn.functional.interpolate(up2, size=up1Size)
         finalUp = nn.functional.interpolate(up1, size=InputSize)
         out = self.activation(finalUp)
-        return out
+        return out, x # output of the net and hidden representation (for visualization)
