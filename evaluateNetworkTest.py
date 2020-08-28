@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 import torch
-from denseDescriptorNetwork_ import *
+from denseDescriptorNetwork import *
 
 #get image and resize it
 img = cv2.imread('test.jpg')
