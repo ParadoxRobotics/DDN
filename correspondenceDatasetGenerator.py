@@ -31,7 +31,7 @@ depthScale = 1
 nbMatch = 100
 nbNonMatch = 10
 # generator instance
-correspondenceGenerator = GenerateCorrespondence(intrinsic_mat=CIP, depth_scale=depthScale, depth_margin=depthMargin, number_match=nbMatch, number_non_match=nbNonMatch)
+correspondenceGenerator = GenerateCorrespondenceRGBD(intrinsic_mat=CIP, depth_scale=depthScale, depth_margin=depthMargin, number_match=nbMatch, number_non_match=nbNonMatch)
 # compute match for every image couple in the original dataset
 for idx in range(0, int(nbFile)-1):
     # current file index
