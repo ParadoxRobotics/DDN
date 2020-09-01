@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 import cv2
 
-class GenerateCorrespondence():
+class GenerateCorrespondenceRGBD():
     def __init__(self, intrinsic_mat, depth_scale, depth_margin, number_match, number_non_match):
-        super(GenerateCorrespondence, self).__init__()
+        super(GenerateCorrespondenceRGBD, self).__init__()
         self.intrinsic_mat = intrinsic_mat
         self.depth_scale = depth_scale
         self.depth_margin = depth_margin
