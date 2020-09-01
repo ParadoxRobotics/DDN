@@ -1,5 +1,6 @@
 # Generate correspondence point between RGB image dataset given their depth and pose
-# in the world frame
+# in the world frame OR generate correspondence point between RGB image dataset using
+# SIFT keypoint
 # Author : Munch Quentin, 2020
 
 import numpy as np
@@ -10,6 +11,7 @@ from random import randint
 import matplotlib.pyplot as plt
 # import match generator
 from matchGeneratorRGBD import *
+from matchGeneratorSIFT import *
 import cv2
 import os
 
@@ -31,7 +33,9 @@ depthScale = 1
 nbMatch = 100
 nbNonMatch = 10
 # generator instance
-correspondenceGenerator = GenerateCorrespondenceRGBD(intrinsic_mat=CIP, depth_scale=depthScale, depth_margin=depthMargin, number_match=nbMatch, number_non_match=nbNonMatch)
+#correspondenceGenerator = GenerateCorrespondenceRGBD(intrinsic_mat=CIP, depth_scale=depthScale, depth_margin=depthMargin, number_match=nbMatch, number_non_match=nbNonMatch)
+correspondenceGenerator = GenerateCorrespondenceSIFT(lowe_ratio=0.80, np_point=6000, number_match=nbMatch, number_non_match=nbNonMatch)
+
 # compute match for every image couple in the original dataset
 for idx in range(0, int(nbFile)-1):
     # current file index
@@ -46,9 +50,13 @@ for idx in range(0, int(nbFile)-1):
     # open Depth image
     depthA = cv2.imread(folderPath+'/frame-'+IdA+'.depth.png',cv2.COLOR_BGR2GRAY)
     depthB = cv2.imread(folderPath+'/frame-'+IdB+'.depth.png',cv2.COLOR_BGR2GRAY)
+
     # compute match / non-match
-    matchA, matchB = correspondenceGenerator.RGBD_Match(imgA, depthA, poseA, imgB, depthB, poseB, mask=None)
-    nonMatchA, nonMatchB = correspondenceGenerator.RGBD_Non_Match(matchA, matchB)
+    #matchA, matchB = correspondenceGenerator.RGBD_Match(imgA, depthA, poseA, imgB, depthB, poseB, mask=None)
+    matchA, matchB = correspondenceGenerator.SIFT_Match(imgA, imgB)
+    #nonMatchA, nonMatchB = correspondenceGenerator.RGBD_Non_Match(matchA, matchB)
+    nonMatchA, nonMatchB = correspondenceGenerator.SIFT_Non_Match(matchA, matchB)
+
     # compute the match in a linear fashion for the contrastive loss
     imageWidth = imgA.shape[1]
     # create match file
@@ -58,12 +66,12 @@ for idx in range(0, int(nbFile)-1):
     nonMatchBFile = open("Dataset/NonMatchB/"+"nonMatchB_"+IdB+".txt", "w")
     # update match in the txt file
     for m in range(len(matchA)):
-        matchAFile.write(str(imageWidth*matchA[m][1]+matchA[m][0])+'\n')
-        matchBFile.write(str(imageWidth*matchB[m][1]+matchB[m][0])+'\n')
+        matchAFile.write(str(imageWidth*matchA[m][1]+matchA[m][0])+',')
+        matchBFile.write(str(imageWidth*matchB[m][1]+matchB[m][0])+',')
     # update non-match in the txt file
     for n in range(len(nonMatchA)):
-        nonMatchAFile.write(str(imageWidth*nonMatchA[n][1]+nonMatchA[n][0])+'\n')
-        nonMatchBFile.write(str(imageWidth*nonMatchB[n][1]+nonMatchB[n][0])+'\n')
+        nonMatchAFile.write(str(imageWidth*nonMatchA[n][1]+nonMatchA[n][0])+',')
+        nonMatchBFile.write(str(imageWidth*nonMatchB[n][1]+nonMatchB[n][0])+',')
     # close file
     matchAFile.close()
     matchBFile.close()
