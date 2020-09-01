@@ -16,7 +16,7 @@ img = cv2.resize(img, (640,480))
 plt.imshow(img)
 plt.show()
 
-input = torch.reshape(torch.from_numpy(img), (3,640,480))
+input = torch.reshape(torch.from_numpy(img), (3,480,640))
 input = input.view((1, *input.shape)).type(torch.FloatTensor)
 print(input.shape)
 
