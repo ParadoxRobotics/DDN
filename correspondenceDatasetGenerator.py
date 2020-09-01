@@ -9,7 +9,7 @@ import random
 from random import randint
 import matplotlib.pyplot as plt
 # import match generator
-from matchGenerator import *
+from matchGeneratorRGBD import *
 import cv2
 import os
 
