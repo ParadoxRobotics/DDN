@@ -36,6 +36,12 @@ nbNonMatch = 10
 #correspondenceGenerator = GenerateCorrespondenceRGBD(intrinsic_mat=CIP, depth_scale=depthScale, depth_margin=depthMargin, number_match=nbMatch, number_non_match=nbNonMatch)
 correspondenceGenerator = GenerateCorrespondenceSIFT(lowe_ratio=0.80, np_point=6000, number_match=nbMatch, number_non_match=nbNonMatch)
 
+# create match/non_match file
+matchAFile = open("Dataset/"+"matchA.txt", "w")
+matchBFile = open("Dataset/"+"matchB.txt", "w")
+nonMatchAFile = open("Dataset/"+"nonMatchA.txt", "w")
+nonMatchBFile = open("Dataset/"+"nonMatchB.txt", "w")
+
 # compute match for every image couple in the original dataset
 for idx in range(0, int(nbFile)-1):
     # current file index
@@ -59,24 +65,24 @@ for idx in range(0, int(nbFile)-1):
 
     # compute the match in a linear fashion for the contrastive loss
     imageWidth = imgA.shape[1]
-    # create match file
-    matchAFile = open("Dataset/MatchA/"+"matchA_"+IdA+".txt", "w")
-    matchBFile = open("Dataset/MatchB/"+"matchB_"+IdB+".txt", "w")
-    nonMatchAFile = open("Dataset/NonMatchA/"+"nonMatchA_"+IdA+".txt", "w")
-    nonMatchBFile = open("Dataset/NonMatchB/"+"nonMatchB_"+IdB+".txt", "w")
     # update match in the txt file
     for m in range(len(matchA)):
         matchAFile.write(str(imageWidth*matchA[m][1]+matchA[m][0])+',')
         matchBFile.write(str(imageWidth*matchB[m][1]+matchB[m][0])+',')
+    matchAFile.write('\n')
+    matchBFile.write('\n')
     # update non-match in the txt file
     for n in range(len(nonMatchA)):
         nonMatchAFile.write(str(imageWidth*nonMatchA[n][1]+nonMatchA[n][0])+',')
         nonMatchBFile.write(str(imageWidth*nonMatchB[n][1]+nonMatchB[n][0])+',')
-    # close file
-    matchAFile.close()
-    matchBFile.close()
-    nonMatchAFile.close()
-    nonMatchBFile.close()
+    nonMatchAFile.write('\n')
+    nonMatchBFile.write('\n')
     # store image A and B
     status = cv2.imwrite('Dataset/ImgA/imgA_'+IdA+'.png', imgA)
     status = cv2.imwrite('Dataset/ImgB/imgB_'+IdB+'.png', imgB)
+
+# close file
+matchAFile.close()
+matchBFile.close()
+nonMatchAFile.close()
+nonMatchBFile.close()
