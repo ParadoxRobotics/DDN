@@ -2,7 +2,7 @@
 
 This is a Pytorch implementation of dense correspondence network (dense object descriptor) for robot manipulation and keyframe based navigation.
 
-The code is based on a CNN feature extraction encoder and the RetinaNet conv2D/upsampling style decoder. 
+The code is based on a CNN feature extraction encoder and the FCN conv2D/upsampling style decoder. 
 
 The cost function and training method are based on the following paper : 
 
